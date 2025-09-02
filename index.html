@@ -1,10 +1,3 @@
-Got it 👍 I’ll merge everything directly into your full **HTML file** so you can just copy–paste and run it.
-
-Here’s your updated code with the 3 changes applied:
-
----
-
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -115,9 +108,11 @@ Here’s your updated code with the 3 changes applied:
         </div>
 
         <!-- Active Timers -->
-        <div id="timers-container" class="grid grid-cols-1 gap-4"></div>
+        <div id="timers-container" class="grid grid-cols-1 gap-4">
+            <!-- Timer entries will be added here -->
+        </div>
 
-        <!-- Timer Template -->
+        <!-- Timer Template (Hidden) -->
         <div class="mt-8 p-6 bg-gray-800 rounded-lg shadow-lg hidden" id="sample-timer">
             <div class="flex flex-col md:flex-row md:items-center justify-between">
                 <div class="mb-4 md:mb-0">
@@ -134,7 +129,7 @@ Here’s your updated code with the 3 changes applied:
                     </div>
                 </div>
             </div>
-            
+
             <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-700">
                 <div>
                     <div class="text-sm text-gray-400 mb-1">Respawn Time:</div>
@@ -145,7 +140,7 @@ Here’s your updated code with the 3 changes applied:
                     <div class="text-sm" data-field="kill-time">-</div>
                 </div>
             </div>
-            
+
             <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-700">
                 <div>
                     <div class="text-sm text-gray-400 mb-1">Next Spawn (GMT+8):</div>
@@ -161,11 +156,54 @@ Here’s your updated code with the 3 changes applied:
     </div>
 
     <script>
-        // ===== Helpers =====
-        function formatForDatetimeLocal(date) {
-            const pad = (n) => String(n).padStart(2, '0');
-            return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+        // Update current time (GMT+8)
+        function updateCurrentTime() {
+            const now = new Date();
+            // Set to GMT+8
+            const gmt8Time = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+            document.getElementById('current-time').textContent =
+                gmt8Time.toLocaleTimeString('en-US', { hour12: false }) +
+                ' (' + gmt8Time.toLocaleDateString() + ')';
         }
+        setInterval(updateCurrentTime, 1000);
+        updateCurrentTime();
+
+        // Set current time as kill time
+        document.getElementById('set-current-time').addEventListener('click', function() {
+            const now = new Date();
+            // Convert to local datetime-local format (YYYY-MM-DDTHH:MM)
+            const localDateTime = now.toISOString().slice(0, 16);
+            document.getElementById('kill-time').value = localDateTime;
+            updateSpawnPreview();
+        });
+
+        // Update spawn preview when values change
+        document.getElementById('kill-time').addEventListener('change', updateSpawnPreview);
+        document.getElementById('respawn-hours').addEventListener('input', updateSpawnPreview);
+        document.getElementById('respawn-minutes').addEventListener('input', updateSpawnPreview);
+
+        function updateSpawnPreview() {
+            const killTimeInput = document.getElementById('kill-time').value;
+            const respawnHours = parseInt(document.getElementById('respawn-hours').value) || 0;
+            const respawnMinutes = parseInt(document.getElementById('respawn-minutes').value) || 0;
+
+            if (killTimeInput && (respawnHours > 0 || respawnMinutes > 0)) {
+                const killTime = new Date(killTimeInput);
+                const totalMilliseconds = (respawnHours * 3600 + respawnMinutes * 60) * 1000;
+                const spawnTime = new Date(killTime.getTime() + totalMilliseconds);
+
+                document.getElementById('preview-kill-time').textContent = formatDateTime(killTime);
+                document.getElementById('preview-spawn-time').textContent = formatDateTime(spawnTime);
+                document.getElementById('spawn-preview').classList.remove('hidden');
+            } else {
+                document.getElementById('spawn-preview').classList.add('hidden');
+            }
+        }
+
+        // Timer functionality
+        let activeTimers = [];
+
+        const LOCAL_STORAGE_KEY = 'bossTimers'; // Key for local storage
 
         function formatTime(seconds) {
             const hrs = Math.floor(seconds / 3600);
@@ -181,7 +219,7 @@ Here’s your updated code with the 3 changes applied:
         }
 
         function formatDateTime(date) {
-            return date.toLocaleString('en-US', { 
+            return date.toLocaleString('en-US', {
                 hour12: false,
                 year: 'numeric',
                 month: '2-digit',
@@ -191,60 +229,31 @@ Here’s your updated code with the 3 changes applied:
             }).replace(',', '');
         }
 
-        function formatDateTime12h(date) {
-            return date.toLocaleString('en-PH', { 
-                hour12: true,
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-            }).replace(',', '');
+        function saveTimers() {
+            // We only want to save the 'bossData' part of each timer
+            const timersToSave = activeTimers.map(timer => ({
+                name: timer.bossData.name,
+                level: timer.bossData.level,
+                status: timer.bossData.status,
+                hours: timer.bossData.hours,
+                minutes: timer.bossData.minutes,
+                // Convert Date object to ISO string for storage
+                killTime: timer.bossData.killTime.toISOString()
+            }));
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(timersToSave));
         }
 
-        // ===== Current time GMT+8 =====
-        function updateCurrentTime() {
-            const now = new Date();
-            const gmt8 = new Date(now.getTime() + (8 * 60 * 60 * 1000));
-            document.getElementById('current-time').textContent =
-                gmt8.toLocaleTimeString('en-US', { hour12: false }) +
-                ' (' + gmt8.toLocaleDateString() + ')';
-        }
-        setInterval(updateCurrentTime, 1000);
-        updateCurrentTime();
-
-        // ===== Spawn Preview =====
-        function updateSpawnPreview() {
-            const killTimeInput = document.getElementById('kill-time').value;
-            const respawnHours = parseInt(document.getElementById('respawn-hours').value) || 0;
-            const respawnMinutes = parseInt(document.getElementById('respawn-minutes').value) || 0;
-            
-            if (killTimeInput && (respawnHours > 0 || respawnMinutes > 0)) {
-                const killTime = new Date(killTimeInput);
-                const totalMilliseconds = (respawnHours * 3600 + respawnMinutes * 60) * 1000;
-                const spawnTime = new Date(killTime.getTime() + totalMilliseconds);
-                
-                document.getElementById('preview-kill-time').textContent = formatDateTime(killTime);
-                document.getElementById('preview-spawn-time').textContent = formatDateTime12h(spawnTime);
-                document.getElementById('spawn-preview').classList.remove('hidden');
-            } else {
-                document.getElementById('spawn-preview').classList.add('hidden');
+        function loadTimers() {
+            const savedTimers = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (savedTimers) {
+                const parsedTimers = JSON.parse(savedTimers);
+                parsedTimers.forEach(bossData => {
+                    // Convert killTime string back to Date object
+                    bossData.killTime = new Date(bossData.killTime);
+                    createTimer(bossData, true); // Pass true to indicate it's loading from storage
+                });
             }
         }
-
-        document.getElementById('kill-time').addEventListener('change', updateSpawnPreview);
-        document.getElementById('respawn-hours').addEventListener('input', updateSpawnPreview);
-        document.getElementById('respawn-minutes').addEventListener('input', updateSpawnPreview);
-
-        // ===== Now button auto-fill =====
-        document.getElementById('set-current-time').addEventListener('click', function() {
-            const now = new Date();
-            document.getElementById('kill-time').value = formatForDatetimeLocal(now);
-            updateSpawnPreview();
-        });
-
-        // ===== Timers =====
-        let activeTimers = [];
 
         function updateTimers() {
             const now = Date.now();
@@ -257,7 +266,6 @@ Here’s your updated code with the 3 changes applied:
                         timer.countdownEl.classList.add('text-red-500', 'pulse');
                         timer.timeLeftEl.textContent = "BOSS IS UP!";
                         timer.timerElement.classList.add('completed');
-                        saveTimers();
                     } else {
                         timer.countdownEl.textContent = formatTime(remaining);
                         timer.timeLeftEl.textContent = formatShortTime(remaining) + ' until spawn';
@@ -266,34 +274,44 @@ Here’s your updated code with the 3 changes applied:
             });
         }
 
-        function createTimer(bossData) {
+        // Modified createTimer to handle loading from storage
+        function createTimer(bossData, isLoading = false) {
             const sampleTimer = document.getElementById('sample-timer');
             const newTimer = sampleTimer.cloneNode(true);
             newTimer.id = '';
             newTimer.classList.remove('hidden');
-            
+
+            // Set boss data
             newTimer.querySelector('[data-field="boss-name"]').textContent = bossData.name || 'Unknown Boss';
             newTimer.querySelector('[data-field="boss-level"]').textContent = `Lv. ${bossData.level || '?'}`;
-            
+
+            // Set status badge
             const statusEl = newTimer.querySelector('[data-field="boss-status"]');
             statusEl.textContent = bossData.status === 'confirmed' ? 'Confirmed' : 'Estimated';
             statusEl.className = `px-2 py-1 rounded text-xs ${bossData.status === 'confirmed' ? 'bg-green-700' : 'bg-yellow-700'}`;
-            
-            newTimer.querySelector('[data-field="respawn-time"]').textContent = 
+
+            // Set respawn time
+            newTimer.querySelector('[data-field="respawn-time"]').textContent =
                 `${bossData.hours}h ${bossData.minutes}m`;
-            
+
+            // Calculate times
+            // Ensure killTime is a Date object, especially when loading from local storage
             const killTime = new Date(bossData.killTime);
             const totalMilliseconds = (bossData.hours * 3600 + bossData.minutes * 60) * 1000;
             const spawnTime = new Date(killTime.getTime() + totalMilliseconds);
-            
+
+            // Set time displays
             newTimer.querySelector('[data-field="kill-time"]').textContent = formatDateTime(killTime);
-            newTimer.querySelector('[data-field="next-spawn"]').textContent = formatDateTime12h(spawnTime);
-            
+            newTimer.querySelector('[data-field="next-spawn"]').textContent = formatDateTime(spawnTime);
+
+            // Get elements for countdown
             const countdownEl = newTimer.querySelector('[data-field="countdown"]');
             const timeLeftEl = newTimer.querySelector('[data-field="time-left"]');
-            
+
+            // Add to DOM
             document.getElementById('timers-container').prepend(newTimer);
-            
+
+            // Store timer data
             const timerObj = {
                 bossData,
                 countdownEl,
@@ -303,72 +321,93 @@ Here’s your updated code with the 3 changes applied:
                 totalMilliseconds: totalMilliseconds,
                 active: true
             };
-            
+
             activeTimers.push(timerObj);
-            saveTimers();
-            
+
+            // Set up boss died button
             newTimer.querySelector('.boss-died-btn').addEventListener('click', function() {
                 if (confirm('Reset timer with current time as new kill time?')) {
                     const newKillTime = new Date();
                     const newSpawnTime = new Date(newKillTime.getTime() + timerObj.totalMilliseconds);
-                    
+
+                    // Update bossData killTime
+                    timerObj.bossData.killTime = newKillTime;
+
+                    // Update displays
                     newTimer.querySelector('[data-field="kill-time"]').textContent = formatDateTime(newKillTime);
-                    newTimer.querySelector('[data-field="next-spawn"]').textContent = formatDateTime12h(newSpawnTime);
-                    
+                    newTimer.querySelector('[data-field="next-spawn"]').textContent = formatDateTime(newSpawnTime);
+
+                    // Reset timer
                     timerObj.endTime = newSpawnTime.getTime();
                     timerObj.active = true;
                     timerObj.timerElement.classList.remove('completed');
                     timerObj.countdownEl.classList.remove('text-red-500', 'pulse');
                     timerObj.countdownEl.classList.add('flip');
                     setTimeout(() => timerObj.countdownEl.classList.remove('flip'), 500);
-                    saveTimers();
+
+                    saveTimers(); // Save after updating a timer
                 }
             });
-            
-            countdownEl.classList.add('flip');
-            setTimeout(() => countdownEl.classList.remove('flip'), 500);
+
+            // Initial animation only for newly created timers, not when loading from storage
+            if (!isLoading) {
+                countdownEl.classList.add('flip');
+                setTimeout(() => countdownEl.classList.remove('flip'), 500);
+                saveTimers(); // Save after creating a new timer
+            }
         }
 
-        // ===== Persistence =====
-        function saveTimers() {
-            const timersData = activeTimers.map(t => ({
-                bossData: t.bossData,
-                endTime: t.endTime,
-                totalMilliseconds: t.totalMilliseconds,
-                active: t.active
-            }));
-            localStorage.setItem('timers', JSON.stringify(timersData));
-        }
+        // Start timer button
+        document.getElementById('start-timer').addEventListener('click', function() {
+            const bossName = document.getElementById('boss-name').value.trim() || 'Unknown Boss';
+            const bossLevel = document.getElementById('boss-level').value;
+            const bossStatus = document.getElementById('boss-status').value;
+            const respawnHours = parseInt(document.getElementById('respawn-hours').value) || 0;
+            const respawnMinutes = parseInt(document.getElementById('respawn-minutes').value) || 0;
+            const killTimeInput = document.getElementById('kill-time').value;
 
-        function loadTimers() {
-            const saved = localStorage.getItem('timers');
-            if (saved) {
-                const timersData = JSON.parse(saved);
-                timersData.forEach(data => {
-                    createTimer(data.bossData);
-                });
+            if (!killTimeInput) {
+                alert('Please enter the kill time');
+                return;
             }
 
-            const formData = JSON.parse(localStorage.getItem('formData') || '{}');
-            Object.entries(formData).forEach(([id, value]) => {
-                const el = document.getElementById(id);
-                if (el) el.value = value;
-            });
-            updateSpawnPreview();
-        }
+            if (respawnHours <= 0 && respawnMinutes <= 0) {
+                alert('Please enter a valid respawn time');
+                return;
+            }
 
-        document.querySelectorAll('#boss-name, #boss-level, #boss-status, #respawn-hours, #respawn-minutes, #kill-time')
-            .forEach(el => {
-                el.addEventListener('input', () => {
-                    const formData = {};
-                    document.querySelectorAll('#boss-name, #boss-level, #boss-status, #respawn-hours, #respawn-minutes, #kill-time')
-                        .forEach(e => formData[e.id] = e.value);
-                    localStorage.setItem('formData', JSON.stringify(formData));
-                });
+            // Convert kill time to Date object
+            const killTime = new Date(killTimeInput);
+
+            createTimer({
+                name: bossName,
+                level: bossLevel,
+                status: bossStatus,
+                hours: respawnHours,
+                minutes: respawnMinutes,
+                killTime: killTime
             });
 
+            // Optionally reset form after starting a timer
+            document.getElementById('reset-form').click();
+        });
+
+        // Reset form button
+        document.getElementById('reset-form').addEventListener('click', function() {
+            document.getElementById('boss-name').value = '';
+            document.getElementById('boss-level').value = '';
+            document.getElementById('respawn-hours').value = '';
+            document.getElementById('respawn-minutes').value = '';
+            document.getElementById('kill-time').value = '';
+            document.getElementById('boss-status').value = 'estimated';
+            document.getElementById('spawn-preview').classList.add('hidden');
+        });
+
+        // Call loadTimers when the page loads
         window.addEventListener('load', loadTimers);
 
-        // ===== Buttons =====
-        document.getElementById('start-timer').addEventListener('click',
-```
+        // Update all timers every second
+        setInterval(updateTimers, 1000);
+    </script>
+</body>
+</html>
