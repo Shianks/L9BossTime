@@ -1,240 +1,269 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boss Spawns Tracker</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        .sort-icon {
-            display: inline-block;
-            width: 0;
-            height: 0;
-            border-left: 4px solid transparent;
-            border-right: 4px solid transparent;
-            border-bottom: 6px solid #6b7280;
-            margin-left: 8px;
-            transition: transform 0.2s ease;
-        }
-        .sort-icon.reverse {
-            transform: rotate(180deg);
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Boss Spawns Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .sort-icon {
+      display: inline-block;
+      width: 0;
+      height: 0;
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-bottom: 6px solid #6b7280;
+      margin-left: 8px;
+      transition: transform 0.2s ease;
+    }
+    .sort-icon.reverse {
+      transform: rotate(180deg);
+    }
+  </style>
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex flex-col items-center py-8">
-    <header class="w-full max-w-4xl text-center mb-8">
-        <h1 class="text-4xl font-bold text-blue-400 mb-2">Boss Spawns Tracker (GMT+8)</h1>
-        <p class="text-gray-300">Track and sort boss spawn times easily. Enter details in the format "HH:MM AM/PM MM/DD/YYYY" (e.g., 02:12 PM 09/10/2025).</p>
-    </header>
+  <header class="w-full max-w-4xl text-center mb-8">
+    <h1 class="text-4xl font-bold text-blue-400 mb-2">Boss Spawns Tracker (GMT+8)</h1>
+    <p class="text-gray-300">
+      Track and sort boss spawn times easily. Enter details in the format
+      "HH:MM AM/PM MM/DD/YYYY" (e.g., 02:12 PM 09/10/2025).
+    </p>
+  </header>
 
-    <main class="w-full max-w-4xl">
-        <!-- Input Form -->
-        <section class="bg-gray-800 p-6 rounded-lg shadow-lg mb-8">
-            <h2 class="text-2xl font-semibold mb-4">Add New Boss Spawn</h2>
-            <form id="addForm" class="flex flex-col sm:flex-row gap-4">
-                <input type="text" id="bossName" placeholder="Boss Name (e.g., Araneo)" class="flex-1 p-3 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                <input type="text" id="spawnTime" placeholder="Spawn Time (e.g., 02:12 PM 09/10/2025)" class="flex-1 p-3 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                <button type="submit" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-medium transition-colors">Add Boss</button>
-            </form>
-        </section>
+  <main class="w-full max-w-4xl">
+    <section class="bg-gray-800 p-6 rounded-lg shadow-lg mb-8">
+      <h2 class="text-2xl font-semibold mb-4">Add New Boss Spawn</h2>
+      <form id="addForm" class="flex flex-col sm:flex-row gap-4">
+        <input
+          type="text"
+          id="bossName"
+          placeholder="Boss Name (e.g., Araneo)"
+          class="flex-1 p-3 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          required
+        />
+        <input
+          type="text"
+          id="spawnTime"
+          placeholder="Spawn Time (e.g., 02:12 PM 09/10/2025)"
+          class="flex-1 p-3 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          required
+        />
+        <button
+          type="submit"
+          class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-medium transition-colors"
+        >
+          Add Boss
+        </button>
+      </form>
+    </section>
 
-        <!-- Next Spawn Highlight -->
-        <section id="nextSpawn" class="bg-green-800 p-4 rounded-lg shadow-lg mb-8 hidden">
-            <h3 class="text-xl font-semibold mb-2 text-green-200">Next Spawn</h3>
-            <div id="nextSpawnDetails" class="text-lg"></div>
-        </section>
+    <section id="nextSpawn" class="bg-green-800 p-4 rounded-lg shadow-lg mb-8 hidden">
+      <h3 class="text-xl font-semibold mb-2 text-green-200">Next Spawn</h3>
+      <div id="nextSpawnDetails" class="text-lg"></div>
+    </section>
 
-        <!-- Boss Table -->
-        <section class="bg-gray-800 p-6 rounded-lg shadow-lg">
-            <h2 class="text-2xl font-semibold mb-4 flex items-center">
-                Boss Spawns List
-                <span id="sortIcon" class="sort-icon"></span>
-            </h2>
-            <button id="sortButton" class="mb-4 bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg font-medium transition-colors">Sort by Time</button>
-            <table id="bossTable" class="w-full table-auto bg-gray-800 rounded-lg overflow-hidden">
-                <thead class="bg-gray-700">
-                    <tr>
-                        <th class="px-4 py-3 text-left font-semibold">Boss Name</th>
-                        <th class="px-4 py-3 text-left font-semibold">Spawn Time</th>
-                        <th class="px-4 py-3 text-left font-semibold">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="bossTableBody" class="divide-y divide-gray-600">
-                    <!-- Dynamic rows will be added here -->
-                </tbody>
-            </table>
-            <div id="noBosses" class="text-center py-8 text-gray-500">
-                No boss spawns added yet. Add some above!
-            </div>
-        </section>
-    </main>
+    <section class="bg-gray-800 p-6 rounded-lg shadow-lg">
+      <h2 class="text-2xl font-semibold mb-4 flex items-center">
+        Boss Spawns List
+        <span id="sortIcon" class="sort-icon"></span>
+      </h2>
+      <button
+        id="sortButton"
+        class="mb-4 bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg font-medium transition-colors"
+      >
+        Sort by Time
+      </button>
+      <table
+        id="bossTable"
+        class="w-full table-auto bg-gray-800 rounded-lg overflow-hidden"
+      >
+        <thead class="bg-gray-700">
+          <tr>
+            <th class="px-4 py-3 text-left font-semibold">Boss Name</th>
+            <th class="px-4 py-3 text-left font-semibold">Spawn Time</th>
+            <th class="px-4 py-3 text-left font-semibold">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="bossTableBody" class="divide-y divide-gray-600"></tbody>
+      </table>
+      <div id="noBosses" class="text-center py-8 text-gray-500">
+        No boss spawns added yet. Add some above!
+      </div>
+    </section>
+  </main>
 
-    <script>
-        // Array to store boss data
-        let bosses = [];
+  <script>
+    let bosses = [];
 
-        // Elements
-        const addForm = document.getElementById('addForm');
-        const bossNameInput = document.getElementById('bossName');
-        const spawnTimeInput = document.getElementById('spawnTime');
-        const bossTableBody = document.getElementById('bossTableBody');
-        const noBossesMsg = document.getElementById('noBosses');
-        const nextSpawnSection = document.getElementById('nextSpawn');
-        const nextSpawnDetails = document.getElementById('nextSpawnDetails');
-        const sortButton = document.getElementById('sortButton');
-        const sortIcon = document.getElementById('sortIcon');
+    const addForm = document.getElementById('addForm');
+    const bossNameInput = document.getElementById('bossName');
+    const spawnTimeInput = document.getElementById('spawnTime');
+    const bossTableBody = document.getElementById('bossTableBody');
+    const noBossesMsg = document.getElementById('noBosses');
+    const nextSpawnSection = document.getElementById('nextSpawn');
+    const nextSpawnDetails = document.getElementById('nextSpawnDetails');
+    const sortButton = document.getElementById('sortButton');
+    const sortIcon = document.getElementById('sortIcon');
 
-        // Sort state
-        let sortReversed = false;
+    let sortReversed = false;
 
-        // Function to parse spawn time string
-        function parseSpawnTime(timeStr) {
-            try {
-                const parts = timeStr.trim().split(' ');
-                if (parts.length !== 3) throw new Error('Invalid format');
-
-                const timePart = parts[0]; // "HH:MM"
-                const ampm = parts[1].toUpperCase(); // "AM" or "PM"
-                const datePart = parts[2]; // "MM/DD/YYYY"
-
-                const [hoursStr, minutesStr] = timePart.split(':');
-                let hours = parseInt(hoursStr);
-                const minutes = parseInt(minutesStr);
-
-                if (hours < 1 || hours > 12 || minutes < 0 || minutes > 59) throw new Error('Invalid time');
-                if (ampm !== 'AM' && ampm !== 'PM') throw new Error('Invalid AM/PM');
-
-                if (ampm === 'PM' && hours !== 12) hours += 12;
-                if (ampm === 'AM' && hours === 12) hours = 0;
-
-                const [monthStr, dayStr, yearStr] = datePart.split('/');
-                const month = parseInt(monthStr) - 1; // JS months are 0-based
-                const day = parseInt(dayStr);
-                const year = parseInt(yearStr);
-
-                if (isNaN(month) || month < 0 || month > 11) throw new Error('Invalid month');
-                if (isNaN(day) || day < 1 || day > 31) throw new Error('Invalid day');
-                if (isNaN(year) || year < 2000) throw new Error('Invalid year');
-
-                // Create date object (assuming GMT+8, but JS Date is local; for sorting, it's relative)
-                const date = new Date(year, month, day, hours, minutes);
-                return date;
-            } catch (error) {
-                throw new Error(`Invalid spawn time format: ${error.message}`);
-            }
+    // Load bosses from localStorage on page load
+    function loadBosses() {
+      const saved = localStorage.getItem('bosses');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          // Rebuild dateObj from saved ISO strings
+          bosses = parsed.map((b) => ({
+            name: b.name,
+            timeStr: b.timeStr,
+            dateObj: new Date(b.dateObj),
+          }));
+        } catch {
+          bosses = [];
         }
+      }
+    }
 
-        // Function to format date back to string
-        function formatDateAsString(date) {
-            const hours = date.getHours();
-            const ampm = hours >= 12 ? 'PM' : 'AM';
-            const displayHours = hours % 12 || 12;
-            const minutes = date.getMinutes().toString().padStart(2, '0');
-            const month = (date.getMonth() + 1).toString().padStart(2, '0');
-            const day = date.getDate().toString().padStart(2, '0');
-            const year = date.getFullYear();
-            return `${displayHours}:${minutes} ${ampm} ${month}/${day}/${year}`;
-        }
+    // Save bosses to localStorage
+    function saveBosses() {
+      // Save dateObj as ISO string for JSON serialization
+      const toSave = bosses.map((b) => ({
+        name: b.name,
+        timeStr: b.timeStr,
+        dateObj: b.dateObj.toISOString(),
+      }));
+      localStorage.setItem('bosses', JSON.stringify(toSave));
+    }
 
-        // Function to add a boss
-        function addBoss(name, timeStr) {
-            try {
-                const parsedDate = parseSpawnTime(timeStr);
-                bosses.push({
-                    name: name.trim(),
-                    timeStr: timeStr.trim(),
-                    dateObj: parsedDate
-                });
-            } catch (error) {
-                alert(error.message);
-                return false;
-            }
-            return true;
-        }
+    function parseSpawnTime(timeStr) {
+      try {
+        const parts = timeStr.trim().split(' ');
+        if (parts.length !== 3) throw new Error('Invalid format');
 
-        // Function to render table
-        function renderTable() {
-            bossTableBody.innerHTML = '';
-            if (bosses.length === 0) {
-                noBossesMsg.style.display = 'block';
-                nextSpawnSection.classList.add('hidden');
-                return;
-            }
-            noBossesMsg.style.display = 'none';
+        const timePart = parts[0];
+        const ampm = parts[1].toUpperCase();
+        const datePart = parts[2];
 
-            // Sort bosses by date
-            bosses.sort((a, b) => {
-                const dateA = a.dateObj;
-                const dateB = b.dateObj;
-                if (sortReversed) {
-                    return dateB - dateA;
-                } else {
-                    return dateA - dateB;
-                }
-            });
+        const [hoursStr, minutesStr] = timePart.split(':');
+        let hours = parseInt(hoursStr);
+        const minutes = parseInt(minutesStr);
 
-            // Update next spawn if there are future spawns
-            if (bosses.length > 0 && bosses[0].dateObj > new Date()) {
-                nextSpawnDetails.innerHTML = `<strong>${bosses[0].name}</strong> at ${bosses[0].timeStr}`;
-                nextSpawnSection.classList.remove('hidden');
-            } else {
-                nextSpawnSection.classList.add('hidden');
-            }
+        if (hours < 1 || hours > 12 || minutes < 0 || minutes > 59)
+          throw new Error('Invalid time');
+        if (ampm !== 'AM' && ampm !== 'PM') throw new Error('Invalid AM/PM');
 
-            // Render rows
-            bosses.forEach((boss, index) => {
-                const row = document.createElement('tr');
-                row.className = 'hover:bg-gray-700 transition-colors';
+        if (ampm === 'PM' && hours !== 12) hours += 12;
+        if (ampm === 'AM' && hours === 12) hours = 0;
 
-                const nameCell = document.createElement('td');
-                nameCell.className = 'px-4 py-3';
-                nameCell.textContent = boss.name;
+        const [monthStr, dayStr, yearStr] = datePart.split('/');
+        const month = parseInt(monthStr) - 1;
+        const day = parseInt(dayStr);
+        const year = parseInt(yearStr);
 
-                const timeCell = document.createElement('td');
-                timeCell.className = 'px-4 py-3';
-                timeCell.textContent = boss.timeStr;
+        if (isNaN(month) || month < 0 || month > 11) throw new Error('Invalid month');
+        if (isNaN(day) || day < 1 || day > 31) throw new Error('Invalid day');
+        if (isNaN(year) || year < 2000) throw new Error('Invalid year');
 
-                const actionsCell = document.createElement('td');
-                actionsCell.className = 'px-4 py-3';
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'bg-red-600 hover:bg-red-700 px-3 py-1 rounded font-medium';
-                deleteBtn.textContent = 'Remove';
-                deleteBtn.onclick = () => {
-                    bosses.splice(index, 1);
-                    renderTable();
-                };
-                actionsCell.appendChild(deleteBtn);
+        return new Date(year, month, day, hours, minutes);
+      } catch (error) {
+        throw new Error(`Invalid spawn time format: ${error.message}`);
+      }
+    }
 
-                row.appendChild(nameCell);
-                row.appendChild(timeCell);
-                row.appendChild(actionsCell);
-                bossTableBody.appendChild(row);
-            });
-        }
-
-        // Event listeners
-        addForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            if (addBoss(bossNameInput.value, spawnTimeInput.value)) {
-                bossNameInput.value = '';
-                spawnTimeInput.value = '';
-                renderTable();
-            }
+    function addBoss(name, timeStr) {
+      try {
+        const parsedDate = parseSpawnTime(timeStr);
+        bosses.push({
+          name: name.trim(),
+          timeStr: timeStr.trim(),
+          dateObj: parsedDate,
         });
+        saveBosses();
+      } catch (error) {
+        alert(error.message);
+        return false;
+      }
+      return true;
+    }
 
-        sortButton.addEventListener('click', () => {
-            sortReversed = !sortReversed;
-            sortIcon.classList.toggle('reverse');
-            renderTable();
-        });
+    function renderTable() {
+      bossTableBody.innerHTML = '';
+      if (bosses.length === 0) {
+        noBossesMsg.style.display = 'block';
+        nextSpawnSection.classList.add('hidden');
+        return;
+      }
+      noBossesMsg.style.display = 'none';
 
-        // Initial render
+      bosses.sort((a, b) => {
+        const dateA = a.dateObj;
+        const dateB = b.dateObj;
+        return sortReversed ? dateB - dateA : dateA - dateB;
+      });
+
+      // Show next spawn that is in the future
+      const now = new Date();
+      const next = bosses.find((b) => b.dateObj > now);
+      if (next) {
+        nextSpawnDetails.innerHTML = `<strong>${next.name}</strong> at ${next.timeStr}`;
+        nextSpawnSection.classList.remove('hidden');
+      } else {
+        nextSpawnSection.classList.add('hidden');
+      }
+
+      bosses.forEach((boss, index) => {
+        const row = document.createElement('tr');
+        row.className = 'hover:bg-gray-700 transition-colors';
+
+        const nameCell = document.createElement('td');
+        nameCell.className = 'px-4 py-3';
+        nameCell.textContent = boss.name;
+
+        const timeCell = document.createElement('td');
+        timeCell.className = 'px-4 py-3';
+        timeCell.textContent = boss.timeStr;
+
+        const actionsCell = document.createElement('td');
+        actionsCell.className = 'px-4 py-3';
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'bg-red-600 hover:bg-red-700 px-3 py-1 rounded font-medium';
+        deleteBtn.textContent = 'Remove';
+        deleteBtn.onclick = () => {
+          bosses.splice(index, 1);
+          saveBosses();
+          renderTable();
+        };
+        actionsCell.appendChild(deleteBtn);
+
+        row.appendChild(nameCell);
+        row.appendChild(timeCell);
+        row.appendChild(actionsCell);
+        bossTableBody.appendChild(row);
+      });
+    }
+
+    addForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (addBoss(bossNameInput.value, spawnTimeInput.value)) {
+        bossNameInput.value = '';
+        spawnTimeInput.value = '';
         renderTable();
-    </script>
+      }
+    });
+
+    sortButton.addEventListener('click', () => {
+      sortReversed = !sortReversed;
+      sortIcon.classList.toggle('reverse');
+      renderTable();
+    });
+
+    // Load saved data and render on page load
+    loadBosses();
+    renderTable();
+  </script>
 </body>
 </html>
-</content>
-</create_file>
